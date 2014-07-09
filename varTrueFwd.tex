@@ -1,0 +1,202 @@
+\section{True Forward Model and Noisy Gradients through Approximate Expectations}
+A completely different approach is to use the true forward model and  noisy gradients of the variational objective by approximating 
+the expectations. In particular, we assume we can compute the $\lkl$ can either be computed analytically or bounded and we focus on 
+the $\lelog$ term. To have noisy estimates of the gradients of this term we use the identities in appendix \ref{sec:expgrad}.
+\subsection{Likelihood Model}
+Unlike the previous sections, here we do not approximate the forward model so our true likelihood is given by:
+\begin{align}
+	p(\vecy | \vectheta) &= \Normal(\vecy; \ftheta, \Sigmay) \text{,}
+\end{align}	
+where, we recall, $\ftheta$ is our fwd model.
+\subsection{Gaussian Prior and Gaussian Posterior}
+here we assume that both the prior and the posterior are Gaussians:
+\begin{align}
+p(\vectheta) &= \Normal(\vectheta; \muo, \Sigmao) \text{,}\\
+q(\vectheta) &= \Normal(\vectheta; \mq; \Sigmaq) \text{.}
+\end{align}
+We recall our variational objective:
+\begin{align}
+\label{eq:lvartruefwd}
+\lvar 	 = \underbrace{\Eb{\log p(y | \vectheta)}_{q(\vectheta)}}_{\lelog} -\underbrace{\kl{q(\vectheta)}{p(\vectheta)}}_{\lkl} \text{,}
+\end{align}
+where we have already derived an expression for the $\lkl$ term which, for simplicity we restate here along with its gradients 
+wrt the posterior parameters:
+\begin{align}
+\label{eq:lkltruefwd}
+\lkl & = \frac{1}{2} 
+	\left\{ 
+		\trace(\Sigmao^{-1} \Sigmaq) + (\muo - \mq)^{T} \Sigmao^{-1} (\muo - \mq) - \log \det{\Sigmao^{-1} \Sigmaq} - M 
+	\right\} \text{,} \\
+\label{eq:gradmeanlkltruefwd}	
+\deriv{\lkl}{\mq} &= -  \Sigmao^{-1} (\muo - \mq) \text{,} \\
+\label{eq:gradcovlkltruefwd}	
+\deriv{\lkl}{\Sigmaq} &= \frac{1}{2} \left( \Sigmao^{-1} - \Sigmaq^{-1} \right) \text{.}
+\end{align}
+%
+For the $\lelog$ term we have that:
+\begin{align}
+	\lelog &= 
+	\Eb{\log \Normal(\vecy; \ftheta, \Sigmay)}_{\Normal(\vectheta; \mq, \Sigmaq)} \\
+	&= \Eb{ - \frac{1}{2} \log \det{2 \pi \Sigmay} - \frac{1}{2} (\vecy - \ftheta)^{T}\Sigmay^{-1}  (\vecy - \ftheta) }_{\Normal(\vectheta; \mq, \Sigmaq)} \\
+\label{eq:lelogtruefwd}	
+	& \approx   - \frac{1}{2} \log \det{2 \pi \Sigmay} - \frac{1}{2S} \sum_{s =1}^{S} (\vecy - \fthetas)^{T}\Sigmay^{-1}  (\vecy - \fthetas) \text{,}
+\end{align}
+with: 
+\begin{equation}
+\thetas \sim \Normal(\vectheta; \mq, \Sigmaq)  \quad \text{for } s = 1, \ldots, S \text{.}
+\end{equation}
+%
+We can also approximate the gradients of $\lelog$ wrt the posterior parameters using the results in section \ref{sec:gradGaussExp}. 
+In particular, we have for the mean parameters:
+\begin{align}
+	\gradient_{\mq} \lelog  &= \Sigmaq^{-1} \Eb{ (\vectheta - \mq) \log \Normal(\vecy; \ftheta, \Sigmay) }_{\Normal(\vectheta; \mq, \Sigmaq)} \\
+\label{eq:gradmeanlelogtruefwd}	
+	& \approx  - \frac{1}{2S} \Sigmaq^{-1} \sum_{s=1}^{S}  (\thetas - \mq) \left( \log \det{2 \pi \Sigmay} +  (\vecy - \fthetas)^{T}\Sigmay^{-1}  (\vecy - \fthetas) \right) \text{.}
+\end{align}
+Simlarly, for the covariance we have that:
+\begin{align}
+	\gradient_{\Sigmaq} \lelog &=
+	\frac{       \Sigmaq^{-1} \Eb{(\vectheta - \mq) (\vectheta-\mq)^{T} \log \Normal(\vecy; \ftheta, \Sigmay)}_{q(\vectheta)}  \Sigmaq^{-1}    -  \Sigmaq^{-1}  \Eb{  \log \Normal(\vecy; \ftheta, \Sigmay) }_{q(\vectheta)}  }{2} \\
+\label{eq:gradcovlelogtruefwd}		
+& \approx \frac{1}{2S} \Bigg[  
+\Sigmaq^{-1} \left( \sum_{s=1}^{S} (\thetas - \mq) (\thetas-\mq)^{T} \log \Normal(\vecy; \fthetas, \Sigmay) \right)\Sigmaq^{-1}  \\
+\nonumber
+&	\quad \qquad - \Sigmaq^{-1} \sum_{s=1}^{S} \log \Normal(\vecy; \fthetas, \Sigmay) \Bigg] \text{.}
+\end{align}
+%
+\subsubsection{Algorithmic Details}
+We want to optimize the variational objective given in Equations \eqref{eq:lvartruefwd}, \eqref{eq:lkltruefwd}  and \eqref{eq:lelogtruefwd} using
+the approximate gradients in Equations \eqref{eq:gradmeanlkltruefwd}, \eqref{eq:gradcovlkltruefwd}, \eqref{eq:gradmeanlelogtruefwd} and \eqref{eq:gradcovlelogtruefwd}.
+
+
+%
+\subsection{Gaussian Prior and Mixture-of-Gaussians Posterior}
+here we consider:
+\begin{align}
+	p(\vectheta) &= \Normal(\vectheta; \muo, \Sigmao) \text{,}\\
+	q(\vectheta) &=   \sum_{k=1}^{K} \pi_{k} \Normal(\vectheta; \mqk; \Sigmaqk) \text{.}
+\end{align}
+%
+We will see that by assuming $\Sigmaqk$ to be diagonal, we obtain a flexible yet computationally efficient algorithm.
+%
+For clarity, we decompose our variational objective as follows:
+\begin{align}
+\label{eq:lvartruefwdMoG}
+ & \Eb{\log p(y | \vectheta)}_{q(\vectheta)} -\kl{q(\vectheta)}{p(\vectheta)}  \text{,} \\
+& = \underbrace{\Eb{\log p(y | \vectheta)}_{q(\vectheta)}}_{\lelog} +  
+\underbrace{\Eb{ - \log q(\vectheta)}_{q(\vectheta)}}_{H(q(\vectheta))}  - \underbrace{\Eb{ - \log p(\vectheta)}_{q(\vectheta)}}_{\lcross}  \\
+& \geq \lvar(\vectheta)  \quad \text{with:} \\
+\lvar & \defeq \lelog(\vectheta) + \lent(\vectheta) - \lcross(\vectheta)  \text{,}
+\end{align}
+%
+where $H(q(\vectheta))$ denotes the entropy of $q(\vectheta)$, which we will lower bound such that $H(q(\vectheta)) \geq \lent(\vectheta)$ and $\lcross$ is the the cross-entropy $H(q(\vectheta), p(\vectheta))$ respectively. We will 
+compute the cross-entropy term analytically and find a lower bound for the entropy term.
+\subsubsection{Entropy Term}
+There is not analytical form for the entropy of a mixture of Gaussians, so we will find a reasonable lower bound for it:
+\begin{align}
+	H(q(\vectheta)) &= - \int \sum_{j=1}^{K} \pi_{j} \Normal(\vectheta; \mqj; \Sigmaqj) \log \left(\sum_{k=1}^{K} \pi_{k} \Normal(\vectheta; \mqk, \Sigmaqk) \right) \ d\vectheta \\
+&= - \sum_{j} \pi_{j} \int 	 \Normal(\vectheta; \mqj; \Sigmaqj)  \log \left( \sum_{k} \pi_{k}\Normal(\vectheta; \mqk, \Sigmaqk)  \right)\ d\vectheta \text{.}
+\end{align}
+Since the $\log(\cdot)$ is a concave function we can use Jensen's inequality to upper bound it:
+\begin{align}
+	& \int \Normal(\vectheta; \mqj; \Sigmaqj) \log \left(  \sum_{k} \pi_{k} \Normal(\vectheta; \mqk, \Sigmaqk)  \right) \dtheta \\
+	& \leq  \log \int \Normal(\vectheta; \mqj; \Sigmaqj)  \left(  \sum_{k} \pi_{k} \Normal(\vectheta; \mqk, \Sigmaqk)  \right) \dtheta 
+	\quad \text{\tiny $\Eb{f(X)} \leq f(\Eb{X})$ } \\
+	&= \log \sum_{k=1}^{K} \pi_{k} \int \Normal(\vectheta; \mqj; \Sigmaqj) \Normal(\vectheta; \mqk, \Sigmaqk)  \dtheta \\
+	& = \log \sum_{k=1}^{K} \pi_{k} \Normal(\mqj; \mqk, \Sigmaqj + \Sigmaqk ) \text{.}
+\end{align}
+Hence:
+\begin{align}
+	H(q(\vectheta)) & \geq  \lent(\vectheta)  \qquad \text{with }\\
+	 \lent(\vectheta) & \defeq - \sum_{j=1}^{K} \pi_{j} \log \sum_{k=1}^{K} \pi_{k} \Normal(\mqj; \mqk, \Sigmaqj + \Sigmaqk )  
+	  \text{.}
+\end{align} 
+%
+\subsubsection{Cross-entropy Term}
+The cross-entropy term is simply the sum of individual Gaussian cross-entropies:
+\begin{align}
+\lcross(\vectheta) &= H(q(\vectheta), p(\vectheta)) \\
+&=  - \int \sum_{k=1}^{K} \pi_{k}\Normal(\vectheta; \mqk, \Sigmaqk) \log \Normal(\vectheta; \muo, \Sigmao) \dtheta \\
+& = - \sum_{k=1}^{K} \pi_{k}  \int \Normal(\vectheta; \mqk, \Sigmaqk) \log \Normal(\vectheta; \muo, \Sigmao) \dtheta \\
+& = - \sum_{k=1}^{K} \pi_{k}  \left(-\frac{1}{2} \Eb{\log \det{2 \pi \Sigmao}}_{\Normal(\vectheta; \mqk, \Sigmaqk)} 
+- \frac{1}{2} \Eb{(\vectheta - \muo)^{T} \Sigmao^{-1} (\vectheta - \muo)}_{\Normal(\vectheta; \mqk, \Sigmaqk)} \right) \\
+&= \frac{1}{2} \sum_{k=1}^{K} \pi_{k} \left[ M \log 2\pi + \log \det{\Sigmao} + (\mqk-\muo)^{T} \Sigmao^{-1}(\mqk-\muo) 
++ \trace(\Sigmao^{-1} \Sigmaqk) \right] \text{.}
+\end{align}
+%
+\subsubsection{Expected log Likelihood Term}
+The expected log likelihood is simply a weighted sum of Gaussian expected likelihoods:
+\begin{align}
+\lelog(\vectheta) & = \sum_{k=1}^{K}  \pi_{k}
+\left[ 
+	-\frac{1}{2} \log \det{2 \pi \Sigmay} - \frac{1}{2S} \sum_{s=1}^{S} (\vecy - \fthetask)^{T} \Sigmay^{-1} (\vecy - \fthetask)
+\right] \text{, \quad where} \\
+\thetask & \sim \Normal(\vectheta; \mqk, \Sigmaqk) \text{,} 
+\end{align}
+where we note that if each $\Sigmaqk$ is diagonal, we can approximate the $\lelog$ term by sampling from univariate Gaussians.
+%
+\subsubsection{Gradients}
+In order to define the gradients of each of the components of the variational objective $\lvar(\vectheta)$ we will make use of the 
+following notation:
+\begin{align}
+	\Cjk & \defeq \expandCjk  \text{,}\\
+	\Normal_{jk} &  \defeq \Normal(\mqj; \mqk, \Cjk) \text{,} \\
+	z_{j} & \defeq \sum_{k=1}^{K} \pik \Normal_{jk} \text{.} 
+\end{align}
+\textbf{Gradients of the Entropy Term:} The gradients of the entropy term wrt the MoG parameters are:
+\begin{align}
+	\gradient_{\pil} \lent(\vectheta) &= - \log \zl - \sum_{j} \pij \frac{\Njl}{\zj}  \\
+	\gradient_{\mql} \lent(\vectheta)
+	&= \pil \left[ 
+		\sum_{k=1}^{K} \pik \left( \frac{\Nlk}{\zl} + \frac{\Nlk}{\zk} \right)   \Clk^{-1} (\mql - \mqk) 
+	\right] \\
+	\gradient_{\Sigmaql} \lent(\vectheta)
+	&=
+	\frac{1}{2} \pil 
+	\sum_{k=1}^{K} \pik \left[  \frac{\Nlk}{\zl} + \frac{\Nlk}{\zk} \right]
+		\left[ \Clk^{-1} - \Clk^{-1} 
+		(\mql - \mqk) (\mql - \mqk)^{T} \Clk^{-1} \right]
+\end{align}
+If we have a MoG with diagonal covariances then we have:
+\begin{align}
+	\gradient_{\Sigmaql} \lent(\vectheta)
+	&=
+		\frac{1}{2} \pil 
+	\sum_{k=1}^{K} \pik \left[  \frac{\Nlk}{\zl} + \frac{\Nlk}{\zk} \right]
+		\left[ \Clk^{-1} - \Clk^{-1} 
+		\diag ( (\mql - \mqk) (\mql - \mqk)^{T} ) \Clk^{-1} \right] \text{,}
+\end{align}
+where we note that the inverses are straightforward to compute as all $\Sigmaqk$ are diagonals. \\ 
+
+
+\textbf{Gradients of the Cross-Entropy Term}: The gradients of the cross-entropy term wrt the MoG parameters are:
+\begin{align}
+	\gradient_{\pil}\lcross(\vectheta) 
+	&=  \frac{1}{2} \left[ M \log 2\pi + \log \det{\Sigmao} + (\mql - \muo)^{T} \Sigmao^{-1} (\mql - \muo) + \trace(\Sigmao^{-1} \Sigmaql)\right]\\
+       \gradient_{\mql}\lcross(\vectheta) 
+       & = \pil \Sigmao^{-1}(\mql - \muo) \\
+	\gradient_{\Sigmaql}\lcross(\vectheta)        
+	&= \frac{1}{2}\pil \Sigmao^{-1} \text{,} \quad \text{If the } \Sigmaql \text{ are diagonal then:} \\
+\gradient_{\Sigmaql}\lcross(\vectheta)        
+	&= \frac{1}{2} \pil \diag(\Sigmao^{-1}) \text{.}
+\end{align}
+%
+\textbf{Gradients of the Expected Log Likelihood Term}:  The gradients of the expected log likelihood term wrt the MoG parameters are:
+\begin{align}
+\gradient_{\pil}\lelog(\vectheta)
+& = -\frac{1}{2} \log \det{2 \pi \Sigmay} - \frac{1}{2S} \sum_{s=1}^{S} (\vecy - \fthetasl)^{T} \Sigmay^{-1} (\vecy - \fthetasl) \\
+\gradient_{\mql}\lelog(\vectheta)
+&= \pil \left[ - \frac{1}{2S} \Sigmaql^{-1} \sum_{s=1}^{S} (\thetasl - \mql) \log \Normal(\vecy; \fthetasl, \Sigmay ) \right] \\
+\gradient_{\Sigmaql}\lelog(\vectheta)
+&= \pil \left\{  \frac{1}{2S} \left[ \Sigmaql^{-1} \left( \sum_{s=1}^{S} (\thetasl - \mql) (\thetasl - \mql)^{T} \log \Normal(\vecy; \fthetasl, \Sigmay ) \right)\Sigmaql^{-1} \right. \right. \\
+& \qquad \qquad \quad \left. \left. - \Sigmaql^{-1} \sum_{s=1}^{S}  \log \Normal(\vecy; \fthetasl, \Sigmay )   \right]  \right\} \text{ and for diagonal } \Sigmaql \text{;}\\
+\deriv{\lelog(\vectheta)}{\sigmatwoli}
+& = \pil \left\{ \frac{1}{2S} \left[ \frac{1}{\sigmafourli} \sum_{s=1}^{S} ([\thetasl]_{i} - [\mql]_{i})^{2} \log \Normal(\vecy; \fthetasl, \Sigmay )
+\right. \right.  \\
+&  \qquad \qquad \quad \left. \left.  - \frac{1}{\sigmatwoli} \sum_{s=1}^{S}  \log \Normal(\vecy; \fthetasl, \Sigmay )   \right]  \right\}  \text{.}
+\end{align}
+
+
+
+
+

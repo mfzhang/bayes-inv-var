@@ -1,0 +1,250 @@
+\section{Gaussian Prior, Linearization and Gaussian Posterior}
+Here we assume that both prior and posterior are in the same Gaussian family:
+\begin{align}
+	p(\vectheta) &= \Normal(\vectheta; \muo, \Sigmao) \\
+	q(\vectheta) &= \Normal(\vectheta; \mq; \Sigmaq) \text{.}
+\end{align}
+
+We can write the variational objective as follows:
+
+\begin{align}
+\label{eq:lvar}
+\lvar 	 = \underbrace{\Eb{\log p(y | \vectheta)}_{q(\vectheta)}}_{\lelog} -\underbrace{\kl{q(\vectheta)}{p(\vectheta)}}_{\lkl} \text{.}
+\end{align}
+
+Our first step is to approximate the forward model $\vecf(\vectheta)$ with a 1st order taylor expansion around the posterior mean. Therefore:
+\begin{align}
+	p(\vecy | \vectheta) &= \Normal(\vecy; \muy(\vectheta), \Sigmay) \text{, with} \\
+	 	\muy(\vectheta) & = \vecf(\mq) + \J(\vectheta -\mq) \text{, } 
+\end{align}
+where $\J$
+%\end{align}
+is the $N \times M$ Jacobian of $f$ evaluated at the posterior mean,
+i.e. $
+\displaystyle
+J_{i,j} = \deriv{f_{i}}{\theta_{j}} \Big|_{\mq}
+$.
+
+The expected log likelihood term ($\lelog$) can be computed as follows:
+\begin{align}
+\label{eq:lelog}
+\lelog = - \frac{1}{2} \left\{ \log \det{2 \pi \Sigmay} + \Eb{(\vecy - \muy(\vectheta))^{T} \Sigmay^{-1}(\vecy - \muy(\vectheta))}_{q(\vectheta)} \right\}
+\text{.}
+\end{align}
+To compute the equation above, we need to calculate the following expectations:
+\begin{align}
+	\Eb{\muy(\vectheta)}_{q(\vectheta)} &= \vecf(\mq) + \J\mq - \J \mq \\
+	&= \vecf(\mq) \text{.}
+\end{align}
+Similarly:
+\begin{align}
+	& \Eb{\mutheta^{T} \Sigmay^{-1} \mutheta} \\
+	& = \Eb{(\fmq + \J\vectheta - \J \mq)^{T} \Sigmay^{-1} (\fmq + \J\vectheta - \J \mq)}_{\qtheta} \\
+	&= \fmq^{T} \Sigmay^{-1} \fmq + 2\Eb{\fmq^{T} \Sigmay^{-1} \J \vectheta} - 2 \fmq \Sigmay^{-1} \J \mq   \\
+	& \quad + \Eb{\vectheta^{T} \J^{T} \Sigmay^{-1} \J \vectheta}	      - 2\Eb{\vectheta^{T} \J^{T} \Sigmay^{-1} \J \mq} + \mq \J^{T} \Sigmay^{-1} \J \mq \\
+	&= 
+	\fmq^{T} \Sigmay^{-1} \fmq +  2 \fmq^{T} \Sigmay^{-1} \J \mq -  2 \fmq \Sigmay^{-1} \J \mq   \\
+	& \quad + \trace(\J^{T} \Sigmay^{-1} \J \Sigmaq ) + \mq^{T} \J^{T} \Sigmay^{-1} \J \mq - 2 \mq \J^{T} \Sigmay^{-1} \J \mq 
+		+  \mq \J^{T} \Sigmay^{-1} \J \mq \\
+	& = \fmq^{T} \Sigmay^{-1} \fmq + \trace(\J^{T} \Sigmay^{-1} \J \Sigmaq ) \text{.}
+\end{align}
+Hence, the expected log likelihood term in Equation \eqref{eq:lelog} is given by:
+\begin{align}
+\label{eq:leloginit}
+\lelog &= - \frac{1}{2} \left\{ \log \det{2 \pi \Sigmay} + \vecy^{T} \Sigmay^{-1} \vecy - 2\vec{y}^{T} \Sigmay^{-1} \fmq 
+		+ \fmq^{T} \Sigmay^{-1} \fmq + \trace(\J^{T} \Sigmay^{-1} \J \Sigmaq ) 	\right\} \\
+	&= 	- \frac{1}{2} \left\{ \log \det{2 \pi \Sigmay} + (\vecy - \fmq)^{T} \Sigmay^{-1} (\vecy - \fmq) 
+					+ \trace(\J^{T} \Sigmay^{-1} \J \Sigmaq ) \right\} \\
+\label{eq:lelogend}					
+	& = \log \Normal(\vecy; \fmq, \Sigmay) - \frac{1}{2} \trace(\J^{T} \Sigmay^{-1} \J \Sigmaq ) \text{.}
+\end{align}
+%
+The $\lkl$ term in Equation \eqref{eq:lvar} can be computed as follows:
+\begin{align}
+\lkl
+& = \frac{1}{2} 
+	\left\{ 
+		\trace(\Sigmao^{-1} \Sigmaq) + (\muo - \mq)^{T} \Sigmao^{-1} (\muo - \mq) - \log \det{\Sigmao^{-1} \Sigmaq} - M \text{.}
+	\right\}
+\end{align}
+%
+\subsection{Learning Posterior Parameters}
+We learn the posterior parameters $\mq$ and $\Sigmaq$ by optimizing the variational lower bound in Equation \eqref{eq:lvar}
+wrt to these parameters, for which we require the corresponding gradients.
+%
+\begin{align}
+	\deriv{\lvar}{\Sigmaq} &= \deriv{\lelog}{\Sigmaq} - \deriv{\lkl}{\Sigmaq} \\
+	&= - \frac{1}{2} \J^{T} \Sigmay^{-1} \J - \frac{1}{2} \left( \Sigmao^{-1} - \Sigmaq^{-1} \right) = 0 \\
+	\label{eq:Sigmaqnew}
+	(\Sigmaqnew)^{-1} &= \J^{T} \Sigmay^{-1} \J + \Sigmao^{-1} \\
+	\label{eq:Lambdaqnew}
+	\Lambdaqnew & = \J^{T} \Lambday \J + \Lambdao \text{,} 
+\end{align}
+where the $\mat{\Lambda}$ variables are the corresponding precision matrices and we have 
+explicitly denoted this update with the `$\text{new}$' label . Note that, as $\J$ is a Jacobian evaluated 
+at $\mq$, $\Lambdaq$ depends on $\mq$. 
+ %
+ Using Equation  \eqref{eq:Sigmaqnew}, and multiplying both sides by $\Sigmaqnew$, we can obtain the following identity:
+ \begin{align}
+ 		\I &= \J^{T} \Sigmay^{-1} \J \Sigmaqnew + \Sigmao^{-1} \Sigmaqnew \\
+		\J^{T} \Sigmay^{-1} \J \Sigmaqnew  &= \I - \Sigmao^{-1} \Sigmaqnew \text{.}
+ \end{align}
+ %
+Replacing this ``optimal'' $\Sigmaqnew$ update in $\lvar$ obtaining:
+ \begin{align}
+ 	\lvar &=   \log \Normal(\vecy; \fmq, \Sigmay) - \frac{1}{2} \trace(\J^{T} \Sigmay^{-1} \J \Sigmaqnew )   \\
+		 & \quad - \frac{1}{2}  
+	\left\{ 
+		\trace(\Sigmao^{-1} \Sigmaqnew) + (\muo - \mq)^{T} \Sigmao^{-1} (\muo - \mq) - \log \det{\Sigmao^{-1} \Sigmaqnew} - M
+	\right\}\\
+	&=  \log \Normal(\vecy; \fmq, \Sigmay)  - \frac{1}{2}M + \frac{1}{2} \trace(\Sigmao^{-1} \Sigmaqnew) \\
+	& \quad - \frac{1}{2}  
+	\left\{ 
+		\trace(\Sigmao^{-1} \Sigmaqnew) + (\muo - \mq)^{T} \Sigmao^{-1} (\muo - \mq) - \log \det{\Sigmao^{-1} \Sigmaqnew} - M
+	\right\}\\	
+	&=
+	\label{eq:lvarmean}
+	\log \Normal(\vecy; \fmq, \Sigmay)  - 
+	\frac{1}{2} \{ (\muo - \mq)^{T} \Sigmao^{-1} (\muo - \mq) - \log \det{\Sigmao^{-1} \Sigmaqnew} \}	\text{.}
+ \end{align}
+%
+In order to learn $\mq$ we optimize the above variational lower bound (given a fixed $\Sigmaqnew$):
+\begin{align}
+	\deriv{\lvar}{\mq} 
+	&= - \frac{1}{2}
+	\left[ -2 \J^{T} \Sigmay^{-1} (\vecy - \fmq) -2 \Sigmao^{-1}(\muo - \mq) \right] = 0 \\
+	\Sigmao^{-1}\muo + \J^{T} \Sigmay^{-1} (\vecy - \fmq) &= \Sigmao^{-1} \mq \\
+	\label{eq:lambdaomq}
+	\Lambdao \mq &= \Lambdao \muo +  \J^{T} \Lambday (\vecy - \fmq) \text{.}
+\end{align}
+Using Equation \eqref{eq:Lambdaqnew} we see that:
+\begin{align}
+	\Lambdao  = \Lambdaqnew  -  \J^{T} \Lambday \J  \text{,}
+\end{align}
+and replacing this in Equation \eqref{eq:lambdaomq} (to get the canonical parametrization of our approximate posterior):
+\begin{align}
+	(\Lambdaqnew  -  \J^{T} \Lambday \J ) \mq &= \Lambdao \muo +  \J^{T} \Lambday (\vecy - \fmq) \\
+	\Lambdaqnew \mqnew & = \Lambdao \muo  + \J^{T} \Lambday\left[ (\vecy - \fmq) + \J \mq \right] \\
+	\label{eq:nuqnew}
+	\nuqnew & = \nuo +  \J^{T} \Lambday\left[ \vecy - \fmq + \J \mq \right] \text{,}
+\end{align}
+where $\nuqnew = \Lambdaqnew \mqnew$ and $\nuo = \Lambdao \muo$ .
+
+Our algorithm will iterate Equations \eqref{eq:Lambdaqnew} and \eqref{eq:nuqnew} until convergence.
+%
+\section{More General Setting}
+Approximating the fwd model around the  posterior mean before hand seems like an odd choice. Here we generalize the 
+variational approach explained above by approximating the fwd model around an arbitrary input $\thetastar$:
+\begin{align}
+	\muy(\vectheta) = \ftilde(\vectheta | \thetastar) \defeq  \vecf(\thetastar) + \J (\vectheta - \thetastar) \text{,}
+\end{align}
+where $\ftilde(\vectheta | \thetastar)$ denotes a linear approximation of $\vecf(\vectheta)$ around $\thetastar$ and
+$\J$ is now the $N \times M$ Jacobian of $f$ evaluated at $\thetastar$,
+i.e. $
+\displaystyle
+J_{i,j} = \deriv{f_{i}}{\theta_{j}} \Big|_{\thetastar}
+$.
+%
+%
+As before, we need to compute the expectation of the linear term:
+\begin{align}
+\Eb{\muy(\vectheta)}_{q(\vectheta)} = \vecf(\thetastar) + \J \mq - \J \thetastar  = \ftilde(\mq | \thetastar) \text{.}
+\end{align}
+%
+We also need to compute the expectation of the quadratic term:
+\begin{align}
+\nonumber
+	 \Eb{\muy(\vectheta)^{T} \Sigmay^{-1}\muy(\vectheta)} & = 
+	\Eb{ (\vecf(\thetastar) + \J \vectheta - \J \thetastar  )^{T} \Sigmay^{-1}  (\vecf(\thetastar) + \J \vectheta - \J \thetastar  )} \\
+	 & =  \vecf(\thetastar)^{T} \Sigmay^{-1}\vecf(\thetastar) + 2 \Eb{\vecf(\thetastar)^{T} \Sigmay^{-1} \J \vectheta} 
+\nonumber
+	 - 2 \fthetastar^{T}\Sigmay^{-1}\J\thetastar + \Eb{\vectheta^{T} \J^{T} \Sigmay^{-1} \J \vectheta} \\
+ \nonumber
+	&  \quad - 2 \Eb{\vectheta^{T} \J^{T} \Sigmay^{-1} \J \thetastar} + \thetastar^{T} \J^{T} \Sigmay^{-1} \J \thetastar \\
+	&= \fthetastar^{T} \Sigmay^{-1}\fthetastar + 2\fthetastar^{T} \Sigmay^{-1} \J \mq
+\nonumber	
+	- 2 \fthetastar^{T} \Sigmay^{-1} \J \thetastar + \trace (\J^{T} \Sigmay^{-1} \J \Sigmaq) \\
+	& \quad + \mq^{T} \J^{T} \Sigmay^{-1} \J \mq 
+	\nonumber
+	-2 \mq^{T} \J^{T} \Sigmay^{-1} \J \thetastar + \thetastar^{T} \J^{T} \Sigmay^{-1} \J \thetastar \\
+	\nonumber
+	& =   (\fthetastar + \J \mq - \J \thetastar)^{T} \Sigmay^{-1} (\fthetastar + \J \mq - \J \thetastar)  + \trace (\J^{T} \Sigmay^{-1} \J \Sigmaq) \\
+	&= (\ftilde(\mq | \thetastar))^{T} \Sigmay^{-1} (\ftilde(\mq | \thetastar)) + \trace (\J^{T} \Sigmay^{-1} \J \Sigmaq) \text{.}
+\end{align}
+%
+Thus, following the same derivations as in Equations \eqref{eq:leloginit} to \eqref{eq:lelogend} we have that:
+\begin{align}
+	\label{leloggeneral}
+	\lelog = \log \Normal(\vecy; \ftilde(\mq | \thetastar), \Sigmay) - \frac{1}{2}  \trace (\Jstar^{T} \Sigmay^{-1} \Jstar \Sigmaq) \text{,}
+\end{align}
+where we have used $\J_{*}$ to emphasize that in this case the Jacobian is evaluated at $\thetastar$ instead of the posterior mean.
+We note the similarity between Equation \eqref{leloggeneral} and Equation \eqref{eq:lelogend}.
+In Equation  \eqref{eq:lelogend}, when assuming a linear approximation of the fwd model around the posterior mean beforehand,
+the expected log likelihood term is a Gaussian centered at the true forward model evaluated at the posterior mean.
+Analogously, in Equation \eqref{leloggeneral} this Gaussian is centered at the linear approximation of the fwd model 
+at the mean posterior around $\thetastar$.  We also note that the Jacobians in Equations \eqref{eq:lelogend} and \eqref{leloggeneral}
+are different, as they are evaluated at $\mq$ and $\thetastar$ respectively.
+%
+\subsection{Posterior Parameters}
+As before, in order to learn the parameters of the posterior, we optimize the variational objective $\lvar$ wrt these parameters. 
+We see that the $\lkl$ term does not change when generalizing the linear approximation of the fwd model around the 
+arbitrary point $\thetastar$. 
+
+For the precision we have a similar expression as before:
+\begin{align}
+ \Lambdaqnew = \Jstar^{T} \Lambday \Jstar + \Lambdao \text{.}
+\end{align}
+%
+For the mean, by setting the derivatives of $\lvar$ to zero, we have that:
+\begin{align}
+	\nonumber
+	 \deriv{\lvar}{\mq} &= \deriv{\lelog}{\mq} - \deriv{\lkl}{\mq} \\
+	\nonumber	 
+	 &= \Jstar^{T} \Sigmay^{-1} (\vecy - \ftildestar) + \Sigmao^{-1}(\muo - \mq)  \\
+	\nonumber	 
+	 & = \Jstar^{T}\Sigmay^{-1}(\vecy - \vecf(\thetastar) + \J  \thetastar) - \Jstar^{T}\Sigmay^{-1} \Jstar \mq + \Sigmao^{-1}(\muo - \mq) =0 \\
+	\nonumber	
+	(  \Jstar^{T}\Sigma^{-1} \Jstar + \Sigmao^{-1}) \mq &= \Sigmao^{-1} \muo +  \Jstar^{T}\Sigmay^{-1}(\vecy - \vecf(\thetastar) + \J  \thetastar) \\
+	\nuqnew &= \nuo + \Jstar^{T}\Lambday(\vecy - \vecf(\thetastar) + \J  \thetastar) \text{.}
+\end{align}	
+%
+\section{Stochastic Optimization}
+%
+%
+\section{Relationship with Laplace Approximation}
+%
+The Laplace approximation to the posterior is also Gaussian with the mean being  the mode of the 
+posterior and the covariance being the inverse Hessian of the negative unnormalized log posterior evaluated at 
+the mean. In 
+other words:
+\begin{align}
+	P_{\text{Lap}}(\vectheta | \vecy) &\defeq \Normal(\vectheta; \mL, \SigmaL), \quad \text{with} \\
+	\mL &=  \argmax_{\vectheta} \lLaplace(\vectheta)\text{,} \\
+	 \SigmaL^{-1} &= - \hessian_{\vectheta}  \lLaplace(\vectheta) \eval_{\mL}
+	\text{, where} \\
+	\label{eq:laplace}
+	\lLaplace  &= \log \Normal(\vecy; \vecf(\vectheta), \Sigmay) - \frac{1}{2} \left\{ (\vectheta - \muo)^{T} \Sigmao^{-1}  (\vectheta - \muo ) 
+		+ \log \det{\Sigmao} + M  \log 2\pi\right\} \text{.}
+\end{align}
+%
+\subsubsection*{Posterior Mean}
+We see that the maximum of Equation \eqref{eq:laplace}, i.e.~the approximate  posterior mean, is exactly the same as the maximum 
+of Equation  \eqref{eq:lvarmean} wrt $\mq$ for a fixed $\Sigmaq$. In other words, the mean for baseline Laplace is obtained by running 
+the  variational posterior approximation method for one iteration.
+%
+\subsubsection*{Posterior Covariance}
+\begin{align}
+	\LambdaL &= \SigmaL^{-1} = - \hessian_{\vectheta} \log \Normal(\vecy; \vecf(\vectheta), \Sigmay) \eval_{\mL} + \Sigmao^{-1} \\
+	&= \hessian_{\vectheta} \left(\frac{1}{2} ( \vecy - \ftheta)^{T} \Lambday  (\vecy - \ftheta )  \right) \eval_{\mL} + \Lambdao \\
+	&= - \fullderiv{}{\vectheta^{T}} \left(\J^{T} \Lambday (\vecy - \ftheta ) \right) \eval_{\mL} + \Lambdao \\
+	&=  \matH + \J^{T} \Lambday \J  + \Lambdao \text{,} 
+\end{align}
+where:
+\begin{align}
+	J_{[i,j]}          &= \deriv{f_{i}}{\theta_{j}} \eval_{\mL} \text{,} \\
+ \matH_{[j,\ell]} &= {\vec{g}^{(j,\ell)}}^{T} \Lambday (\vecy - \vecf(\mL))	\quad \text{and} \\
+	{g}^{(j,\ell)}_{i} &=  - \derivtwo{f_{i}}{\theta_{j}\theta_{\ell}} \eval_{\mL} \text{, } i=1, \ldots, N \text{.}
+\end{align}
+
+
+

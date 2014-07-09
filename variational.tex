@@ -1,0 +1,71 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{epsfig,latexsym,amsbsy,amssymb,amsmath,color, url, natbib, booktabs, multirow}
+\usepackage{colortbl}
+\usepackage{longtable}
+\usepackage{natbib}
+\usepackage{algorithm,algorithmic}
+\oddsidemargin  0.0in
+\evensidemargin 0.0in
+\textwidth      6.5in
+\headheight     0.0in
+\topmargin     -1.0in
+\textheight=10.0in
+\parindent=0in 
+
+\input{macros.tex}
+\input{variational_macros.tex}
+
+\title{Bayesian Joint Inversions through Variational Inference}
+\author{Edwin V.~Bonilla}
+\date{Last Update: May 13th, 2014}
+\begin{document}
+\maketitle
+
+Here we assume the following definitions / notation:
+\begin{align}
+	M: & \text{number of parameters} \\
+	N: & \text{number of observations} \\
+	\vectheta: & \text{hidden parameters to reason about} \\ 
+	\vecf(\vectheta): & \text{forward model} \\ 
+	p(\vectheta): & \text{prior} \\
+	p(\vecy|\vectheta): & \text{likelihood model} \\ 
+	q(\vectheta): & \text{approximate posterior} \text{.}
+\end{align}
+
+\input{variationalLinearFwd}
+\input{varTrueFwd}
+\pagebreak
+\input{appendix}
+
+
+\bibliographystyle{plain}
+\bibliography{variational}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}

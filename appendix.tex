@@ -1,0 +1,105 @@
+\appendix
+\section{Gaussian Identities for Gradients of Expectations \label{sec:expgrad}}
+Here we are interested in the gradients of a Gaussian expectation of a function $\calL(\vectheta)$ wrt the parameters of the Gaussian. This function can be, for example, the expect log likelihood term in a variational objective. 
+To get this, we need the gradients of a Gaussian:
+\begin{equation}
+	q(\vectheta) = \Normal(\vectheta; \mq, \Sigmaq) = \frac{1}{\det{2\pi\Sigmaq}^{1/2}} \exp \left(- \frac{1}{2}(\vectheta-\mq)^{T}\Sigmaq^{-1}(\vectheta-\mq) \right) 
+\end{equation}
+wrt its parameters $\mq$, $\Sigmaq$. 
+%
+\subsection{Gradients of a Gaussian}
+%
+For the mean we have:
+\begin{align}
+	\gradient_{\mq} \Normal(\vectheta; \mq, \Sigmaq) 
+	& = \Normal(\vectheta; \mq, \Sigmaq)  \Sigmaq^{-1} (\vectheta - \mq) \text{.} 
+\end{align}
+We can also see easily that:
+\begin{align}
+	\gradient_{\mq} \Normal(\vectheta; \mq, \Sigmaq)  = - \gradient_{\vectheta} \Normal(\vectheta; \mq, \Sigmaq)  \text{.} 
+\end{align}
+
+%
+For the covariance we have that:
+\begin{align}
+	\gradient_{\Sigmaq} q(\vectheta) &= (2\pi)^{-N/2} (-1/2) \det{\Sigmaq}^{-3/2} \det{\Sigmaq} \Sigmaq^{-1} \exp(\cdot)  \\
+	& \quad + \frac{1}{\det{2 \pi \Sigmaq}^{1/2}} \exp(\cdot) (-1/2) (-\Sigmaq^{-1})(\vectheta-\mq)(\vectheta-\mq)^{T} \Sigmaq^{-1} \\
+	\label{eq:gradGaussSigma}
+	&= - \frac{1}{2} \Normal(\vectheta; \mq, \Sigmaq) \left( \Sigmaq^{-1}  - \Sigmaq^{-1} (\vectheta - \mq) (\vectheta-\mq)^{T} \Sigmaq^{-1}\right) \text{.}
+\end{align}
+We can relate the above gradient to the Hessian:
+\begin{align}
+	\hessian_{\vectheta} q(\vectheta)
+	& = \deriv{}{\vectheta^{T}} \left(- \Normal(\vectheta; \mq, \Sigmaq) \Sigmaq^{-1} (\vectheta - \mq) \right) \\
+	& =  \Normal(\vectheta; \mq, \Sigmaq)  \Sigmaq^{-1} (\vectheta - \mq) (\vectheta - \mq)^{T} \Sigmaq^{-1} -  \Normal(\vectheta; \mq, \Sigmaq) \Sigmaq^{-1}\\
+	& = -  \Normal(\vectheta; \mq, \Sigmaq)  \left(  \Sigmaq^{-1}  -    \Sigmaq^{-1} (\vectheta - \mq) (\vectheta - \mq)^{T} \Sigmaq^{-1}  \right)\\
+	& = 2 \gradient_{\Sigmaq} q(\vectheta)      \qquad  \text{  \tiny{Equation \eqref{eq:gradGaussSigma}} } \\
+	\label{eq:gradtohess}
+	\gradient_{\Sigmaq} q(\vectheta) & = \frac{1}{2} \hessian_{\vectheta}  q(\vectheta) \text{.}
+\end{align}
+%
+\subsection{Gradients of the Expectation of a Function \label{sec:gradGaussExp}}
+Hence, the gradients of the expectation of a function $\calL(\vectheta)$ wrt the mean parameter is given by:
+\begin{align}
+%\nonumber
+	\gradient_{\mq} \Eb{\calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)} 
+	& = \gradient_{\mq} \int \calL(\vectheta) \Normal(\vectheta; \mq, \Sigmaq) \ d \vectheta \\
+%\nonumber	
+	& =  \int \calL(\vectheta) \gradient_{\mq} \Normal(\vectheta; \mq, \Sigmaq) \ d \vectheta \\
+%\nonumber	
+	 & =  \int \calL(\vectheta) \Normal(\vectheta; \mq, \Sigmaq)  \Sigmaq^{-1} (\vectheta - \mq) \ d \vectheta \\
+	 & = \Sigmaq^{-1} \Eb{ (\vectheta - \mq) \calL(\vectheta) }_{\Normal(\vectheta; \mq, \Sigmaq)} \text{.}
+\end{align}
+%
+For the covariance we have that:
+\begin{align}
+%\nonumber
+\gradient_{\Sigmaq} \Eb{\calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)} 
+&= \gradient_{\Sigmaq} \int \calL(\vectheta) \Normal(\vectheta; \mq, \Sigmaq) \ d \vectheta \\
+%\nonumber
+& = \int  \calL(\vectheta)  \gradient_{\Sigmaq} \Normal(\vectheta; \mq, \Sigmaq) \ d \vectheta \\
+%\nonumber
+& = \int  \calL(\vectheta) (- 1/2) \Normal(\vectheta; \mq, \Sigmaq) \left( \Sigmaq^{-1}  - \Sigmaq^{-1} (\vectheta - \mq) (\vectheta-\mq)^{T} \Sigmaq^{-1}\right) \ d \vectheta \\
+&= \frac{       \Sigmaq^{-1} \Eb{(\vectheta - \mq) (\vectheta-\mq)^{T} \calL(\vectheta)}_{q(\vectheta)}  \Sigmaq^{-1}    -  \Sigmaq^{-1}  \Eb{ \calL(\vectheta)}_{q(\vectheta)}  }{2} \text{.}
+\end{align}
+%
+\subsubsection{Decomposable Functions}
+If we consider the simple case of decomposable functions $\calL(\vectheta) = \sum_{i} \calL_{i} (\theta_{i})$, e.g.~when having iid (log) likelihoods, it is straightforward to show that:
+\begin{align}
+	\deriv{ \Eb{\calL(\vectheta)}}{m_{i}} = \frac{ \Eb{(\theta_{i} - m_{i}) \calL_{i}(\theta_{i})}_{\Normal(\theta_{i}; m_{i}, \sigma_{i}^{2})}}{\sigma_{i}^{2}} \text{,}
+\end{align}
+where $m_{i} = \vecentry{\mq}{i}$ and $\sigma_{i}^{2} = \matentry{\Sigmaq}{i}{i}$, i.e.~the $i\mth$ components of the corresponding posterior mean and posterior covariance.
+%
+Similarly, for the variances we have that:
+\begin{align}
+	\deriv{\Eb{\calL(\vectheta)}}{\sigma_{i}^{2}} = 
+	\frac{   \Eb{(\theta_{i}-m_{i})^{2} \calL_{i}(\theta_{i}) }_{q_{i}(\theta_{i})}  - \sigma_{i}^{2} \Eb{\calL_{i}(\theta_{i})}_{q(\theta_{i})}   }    {2 \sigma_{i}^{4}} \text{,}
+\end{align}
+where $q_{i}(\theta_{i}) = \Normal(\theta_{i}; m_{i}, \sigma_{i}^{2})$.
+
+From the Equations above we observe that, for decomposable functions, \emph{we only need to compute expectations over 1-dimensional Gaussians}. Of course this does not apply to general inversion problems but it is a neat result.
+%
+\section{Gradients of Expectations are Expectations of Gradients}
+For Gaussian distributions we can also show the following (more general) results involving gradients of expectations. This could be
+useful if one knew the gradients of $\calL(\vectheta)$ or had fast approximations for them.
+\begin{align}
+	\gradient_{\mq} \Eb{\calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)} 
+	&= \int \calL(\vectheta)  \gradient_{\mq} \Normal(\vectheta; \mq, \Sigmaq)   \ d \vectheta \\
+	& = - \int \underbrace{\calL(\vectheta)}_{u}  \underbrace{ \gradient_{\vectheta} \Normal(\vectheta; \mq, \Sigmaq)   \ d \vectheta}_{dv} \\
+	&= - \underbrace{ \calL(\vectheta) \Normal(\vectheta; \mq, \Sigmaq)  \Big|_{-\infty}^{\infty}}_{0} + \int \Normal(\vectheta; \mq, \Sigmaq) \gradient_{\vectheta}\calL(\vectheta) \ d \vectheta \\
+	& = \Eb{\gradient_{\vectheta} \calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)} \text{.}
+\end{align}
+This results is sometimes known as Bonnet's theorem \cite{bonnet-64}.
+%
+Similarly for the covariances, using Equation \eqref{eq:gradtohess}, we have that:
+\begin{align}
+	\gradient_{\Sigmaq} \Eb{\calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)}  
+	&=  \int   \calL(\vectheta)  \gradient_{\Sigmaq} \Normal(\vectheta; \mq, \Sigmaq)  \ d \vectheta \qquad \text{\tiny Equation \eqref{eq:gradtohess}} \\
+	&= \frac{1}{2} \int \calL(\vectheta)\hessian_{\vectheta}  \Normal(\vectheta; \mq, \Sigmaq) \ d \vectheta  \\
+	& = \frac{1}{2} \int   \Normal(\vectheta; \mq, \Sigmaq) )\hessian_{\vectheta} \calL(\vectheta) \ d \vectheta \qquad \text{\tiny Int. by parts} \\
+	& = \frac{1}{2} \Eb{\hessian_{\vectheta} \calL(\vectheta)}_{\Normal(\vectheta; \mq, \Sigmaq)} \text{.}
+\end{align}
+This result is known as Price's Theorem \cite{price-58}.
+
+
+
