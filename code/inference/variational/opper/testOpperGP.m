@@ -1,4 +1,4 @@
-% testOpperGP.m;
+% testOpperGP.m
 % Test Opper's method in the GP Case
 clear all; clc; close all;
 

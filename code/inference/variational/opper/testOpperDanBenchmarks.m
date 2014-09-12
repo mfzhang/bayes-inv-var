@@ -40,7 +40,7 @@ for k = 1 : nFolds
   evaluateObservablePredictions(xtrain, xtest, ytest, yStar);   
   
   fname = ['resultsOpper/', benchmark, '_k', num2str(k), '.mat'];
-  save(fname, 'mufPred', 'sigmafStar', 'yStar', 'pred');
+  %save(fname, 'mufPred', 'sigmafStar', 'yStar', 'pred');
 end
 
 
@@ -49,18 +49,6 @@ return;
   
 
 
-%% Read data
-function [xtrain, ftrain, ytrain, xtest, ftest, ytest] = ...
-               readSingleFold(x, f, y, train, test, k)
-    xtrain = x(train(k,:),:);
-    ftrain = f(train(k,:),:);
-    ytrain = y(train(k,:),:);
-
-    xtest = x(test(k,:),:);
-    ftest = f(test(k,:),:);
-    ytest = y(test(k,:),:);
-    
-return;
 
 
 %% Evaluate Latent Predicitons
