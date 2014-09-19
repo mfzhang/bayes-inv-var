@@ -2,10 +2,10 @@ function  Perf = evaluateOpperDan(  )
 %EVALUATEOPPERDAN  Evaluate predictions on Dan's benchmarks
 %   Detailed explanation goes here
 DATADIR    = 'dataDan';
-RESULTSDIR =  'resultsOpper';
+RESULTSDIR =  'resultsTrung';
 
 %benchmarks = {'lineardata', 'poly3data', 'expdata', 'sindata', 'tanhdata'};
-benchmarks = {'lineardata', 'poly3data', 'expdata'};
+benchmarks = {'lineardata'};
 
 
 L = length(benchmarks);
