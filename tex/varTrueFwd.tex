@@ -67,8 +67,35 @@ Simlarly, for the covariance we have that:
 \subsubsection{Algorithmic Details}
 We want to optimize the variational objective given in Equations \eqref{eq:lvartruefwd}, \eqref{eq:lkltruefwd}  and \eqref{eq:lelogtruefwd} using
 the approximate gradients in Equations \eqref{eq:gradmeanlkltruefwd}, \eqref{eq:gradcovlkltruefwd}, \eqref{eq:gradmeanlelogtruefwd} and \eqref{eq:gradcovlelogtruefwd}.
-
-
+%
+\subsubsection{IID Likelihood}
+Here we show that for the iid likelihood case, everything can be computed using samples from \textbf{univariate} Gaussians. Note 
+that this assumption implies:
+\begin{itemize}
+\item[(a)]
+$p(y_{i} | f(\theta_{i})) = \Normal(y_{i}; f(\theta_{i}), \sigma_{i}^{2})$
+\item[(b)]
+$p(\vec{y} | \vec{f}) = \prod_{i} p(y_{i} | f_{i})$ {,}
+\end{itemize}
+where $f_{i} = f(\theta_{i})$. We note that not only the noise covariance is diagonal but also there is a single forward model $f$ that acts on an individual parameter $\theta_{i}$, hence $N=M$.
+For simplicity we define:
+\begin{equation}
+	\calL_{i}(\theta_{i}) = \log \Normal(y_{i}; f_{i}, \sigmay_{i}^{2}) \text{,}
+\end{equation}
+and using Appendix \ref{sec:app-decomp} 
+The expected log likelihood is given by:
+\begin{equation}
+\lelog(\vectheta) = \sum_{n=1}^{N} \Eb{ \calL_{i}(\theta_{i}) }_{q_{i}(\theta_{i})}
+\end{equation}
+%
+and the gradients:
+\begin{align}
+	\deriv{ \Eb{\lelog(\vectheta)}}{m_{i}} &= \frac{ \Eb{(\theta_{i} - m_{i}) \calL_{i}(\theta_{i})}_{q_{i}(\theta_{i})}}{\sigmaq_{i}^{2}}   \text{,} \\ 
+\deriv{\Eb{\lelog}}{\sigmaq_{i}^{2}} &= 
+	\frac{   \Eb{(\theta_{i}-m_{i})^{2} \calL_{i}(\theta_{i}) }_{q_{i}(\theta_{i})}  - \sigmaq_{i}^{2} \Eb{\calL_{i}(\theta_{i})}_{q(\theta_{i})}   }    {2 \sigmaq_{i}^{4}} \text{,}
+\end{align}
+where $q_{i}(\theta_{i}) = \Normal(\theta_{i}; m_{i}, \sigmaq_{i}^{2})$.
+%
 %
 \subsection{Gaussian Prior and Mixture-of-Gaussians Posterior}
 here we consider:

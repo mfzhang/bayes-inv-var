@@ -63,7 +63,7 @@ For the covariance we have that:
 &= \frac{       \Sigmaq^{-1} \Eb{(\vectheta - \mq) (\vectheta-\mq)^{T} \calL(\vectheta)}_{q(\vectheta)}  \Sigmaq^{-1}    -  \Sigmaq^{-1}  \Eb{ \calL(\vectheta)}_{q(\vectheta)}  }{2} \text{.}
 \end{align}
 %
-\subsubsection{Decomposable Functions}
+\subsubsection{Decomposable Functions \label{sec:app-decomp}}
 If we consider the simple case of decomposable functions $\calL(\vectheta) = \sum_{i} \calL_{i} (\theta_{i})$, e.g.~when having iid (log) likelihoods, it is straightforward to show that:
 \begin{align}
 	\deriv{ \Eb{\calL(\vectheta)}}{m_{i}} = \frac{ \Eb{(\theta_{i} - m_{i}) \calL_{i}(\theta_{i})}_{\Normal(\theta_{i}; m_{i}, \sigma_{i}^{2})}}{\sigma_{i}^{2}} \text{,}
