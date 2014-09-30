@@ -3,10 +3,13 @@ function  testTrungDanBenchmarks(  )
 %   For single output, Trung's code is an improved version of Oppers
 % This code (and Trung's code) uses the new version of gpml
 
+str_init  = datestr(now,30);
+diary([str_init, '.log']);
+
 clear all; clc; close all;
 DATADIR = 'dataDan';
-%benchmarks = {'lineardata', 'poly3data', 'expdata', 'signdata', 'tanhdata'};
-benchmarks = {'lineardata'};
+benchmarks = {'lineardata', 'poly3data', 'expdata', 'signdata', 'tanhdata'};
+%benchmarks = {'lineardata'};
 LEARN = 1; % loads results from file
 
 for i = 1 : length(benchmarks)
@@ -14,6 +17,7 @@ for i = 1 : length(benchmarks)
 end
  
 
+diary off;
 
 return;
 
@@ -57,6 +61,11 @@ end
 %% Trung's code learns the noise so this parameter is not used
 function [mufStar, sigmafStar, yStar, pred, m, conf] = runTrungSingle(fwdFunc, xtrain, ytrain, xtest,...
                                                         noise)
+
+%% DELETE ME?
+% ybar   = mean(ytrain);
+% ytrain = ytrain - ybar; 
+                                                    
 % lets assume that we are given the noise for now
 % We can have it as an additional parameter of the covariance
 % May be not,  I think I need to learn it
@@ -66,8 +75,14 @@ function [mufStar, sigmafStar, yStar, pred, m, conf] = runTrungSingle(fwdFunc, x
  m                    = learnFullGaussian(m,conf);
 [pred.mu, pred.sigma] = feval(m.pred, m, conf, m.xt); 
 pred.Sigma            = diag(pred.sigma); % we don't really care about cross-covariances
+
+%% DELETE ME?
+% pred.mu = pred.mu + ybar;
+
+
 mufStar               = pred.mu;
 sigmafStar            = sqrt(diag(pred.Sigma));
+
 
 
 %% We use my old function for predicting observables
@@ -83,12 +98,15 @@ return;
 
 function [conf m] = getConfigTrung(fwdFunc, xtrain, ytrain, xtest)
 
-covfunc = @covMatern5iso;
+covfunc = @covMatern52iso;
 
 %% Configuration
 conf.nsamples               = 10000;      % Number of samples for MC estimates
 conf.covfunc                = covfunc;
-conf.maxiter                = 200;
+conf.maxiter                = 200; % global iterations
+conf.variter                = 100; % # iter var parameters
+conf.hypiter                = 100; % # iter hyperparameters
+conf.likiter                = 100; % # iter likelihood parameters
 conf.displayInterval        = 20;
 conf.checkVarianceReduction = false;
 conf.learnhyp               = true;
@@ -100,8 +118,10 @@ myLogLike = @(y,f,hyp) llhGaussian(y,feval(fwdFunc,f),hyp);
 m.x   = xtrain; m.y = ytrain; m.xt = xtest;
 m.N   = N; 
 m.Q   = 1; % Only a single latent function
-m.pars.M = ytrain;                % Variational
-m.pars.L = log(ones(m.N*m.Q,1));  % parameters
+                                          % initial  
+m.pars.M = ytrain;                          % Variational
+m.pars.L = -2*(1./1e-3)*(ones(m.N*m.Q,1));  % parameters (-2*eta)
+
 m.pars.hyp.covfunc = covfunc;   % covariance hyperparameters
 m.pars.hyp.cov = cell(m.Q,1);
 m.pars.hyp.cov{1}  = log(ones(eval(feval(covfunc)),1));
@@ -115,13 +135,6 @@ m.pars.hyp.likfunc = m.likfunc;
 return;
 
 
-%% covMatern5sio
-function K = covMatern5iso(varargin)
-
-K = covMaterniso(5, varargin{:});
-
-return;
-  
 
 
 
