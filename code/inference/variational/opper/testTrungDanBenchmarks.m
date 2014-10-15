@@ -3,27 +3,30 @@ function  testTrungDanBenchmarks(  )
 %   For single output, Trung's code is an improved version of Oppers
 % This code (and Trung's code) uses the new version of gpml
 
+DATADIR   = 'dataDan';
 str_init  = datestr(now,30);
-diary([str_init, '.log']);
+TRGDIR    = ['resultsTrung/', str_init];
+mkdir(TRGDIR);
+logFname  = [TRGDIR, '/', str_init, '.log']; 
+diary(logFname);
 
-clear all; clc; close all;
-DATADIR = 'dataDan';
-benchmarks = {'lineardata', 'poly3data', 'expdata', 'signdata', 'tanhdata'};
-%benchmarks = {'lineardata'};
+%benchmarks = {'lineardata', 'poly3data', 'expdata', 'sindata', 'tanhdata'};
+benchmarks = {'expdata', 'lineardata', 'poly3data',  'sindata', 'tanhdata'};
+
 LEARN = 1; % loads results from file
 
 for i = 1 : length(benchmarks)
-  evaluateBenchmark(DATADIR, benchmarks{i}, LEARN);
+  evaluateBenchmark(DATADIR, TRGDIR, benchmarks{i}, LEARN);
 end
- 
+  
 
 diary off;
 
 return;
 
-
+  
 %% Evaluate a single benchmark
-function evaluateBenchmark(DATADIR, benchmark, learnFlag)
+function evaluateBenchmark(DATADIR, TRGDIR, benchmark, learnFlag)
 % Just avoids Matlab sending me stupid warning
 f = [];  dfunc = []; noise = [];  train = [];
 test = [];  x = [];  y = [];
@@ -38,7 +41,7 @@ eval(['fwdFunc = @(theta)',strFunc, ';']);
 for k = 1 :  nFolds
     [xtrain, ftrain, ytrain, xtest, ftest, ytest] = ...
         readSingleFold(x, f, y, train, test,k);
-    fname = ['resultsTrung/', benchmark, '_k', num2str(k), '.mat'];    
+    fname = [TRGDIR, '/', benchmark, '_k', num2str(k), '.mat'];    
     if (learnFlag)
        [mufPred, sigmafStar, yStar, pred, m, conf] = runTrungSingle(fwdFunc, xtrain, ytrain, xtest, ...
                                                         noise);
@@ -96,7 +99,7 @@ return;
 
 
 
-function [conf m] = getConfigTrung(fwdFunc, xtrain, ytrain, xtest)
+function [conf m] = getConfigTrung(fwdFunc, xtrain, ytrain, xtest, noise)
 
 covfunc = @covMatern52iso;
 
@@ -104,13 +107,13 @@ covfunc = @covMatern52iso;
 conf.nsamples               = 10000;      % Number of samples for MC estimates
 conf.covfunc                = covfunc;
 conf.maxiter                = 200; % global iterations
-conf.variter                = 100; % # iter var parameters
+conf.variter                = 500; % # iter var parameters
 conf.hypiter                = 100; % # iter hyperparameters
 conf.likiter                = 100; % # iter likelihood parameters
 conf.displayInterval        = 20;
 conf.checkVarianceReduction = false;
 conf.learnhyp               = true;
-
+conf.latentnoise            = 1e-10; % Variance of latent noise
 
 %% Model 
 myLogLike = @(y,f,hyp) llhGaussian(y,feval(fwdFunc,f),hyp);
@@ -120,15 +123,19 @@ m.N   = N;
 m.Q   = 1; % Only a single latent function
                                           % initial  
 m.pars.M = ytrain;                          % Variational
-m.pars.L = -2*(1./1e-3)*(ones(m.N*m.Q,1));  % parameters (-2*eta)
+
+%m.pars.L = -2*(1./1e-3)*(ones(m.N*m.Q,1));  % parameters (-2*eta)
+m.pars.L = -2*(1./1e10)*(ones(m.N*m.Q,1));
 
 m.pars.hyp.covfunc = covfunc;   % covariance hyperparameters
 m.pars.hyp.cov = cell(m.Q,1);
 m.pars.hyp.cov{1}  = log(ones(eval(feval(covfunc)),1));
 m.likfunc          = myLogLike;
 m.pred             = @predRegression;
-m.pars.hyp.lik     = 0.5*log(var(ytrain,1)/4 + 1e-4);
+
+
 m.pars.hyp.likfunc = m.likfunc;
+m.pars.hyp.lik     = 0.5*log(var(ytrain,1)/4 + 1e-4);
   
 
 
